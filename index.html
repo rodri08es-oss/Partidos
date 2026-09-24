@@ -34,6 +34,50 @@
       width: 100%;
       height: calc(100vh - 52px);
     }
+
+    .marker-partidos {
+      background: #2563eb;
+      color: white;
+      border: 2px solid white;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.4);
+    }
+
+    .popup-estadio {
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+
+    .popup-lugar {
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .popup-fecha {
+      font-weight: bold;
+      margin-top: 10px;
+      margin-bottom: 5px;
+      padding-bottom: 3px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .popup-partido {
+      margin: 6px 0;
+      line-height: 1.4;
+    }
+
+    .popup-hora {
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -48,11 +92,12 @@
   <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Nuestros datos -->
+  <!-- Datos de los partidos -->
   <script src="partidos.js"></script>
 
   <script>
-    const map = L.map('map').setView([40.5, -3.5], 5);
+
+    const map = L.map('map').setView([42, 2], 5);
 
     L.tileLayer(
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -62,22 +107,233 @@
       }
     ).addTo(map);
 
-    // Comprobamos que partidos.js se carga correctamente
+
+    function escapar(texto) {
+      return String(texto ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+
+    function formatearFecha(fechaISO) {
+
+      const partes = fechaISO.split('-');
+
+      const fecha = new Date(
+        Number(partes[0]),
+        Number(partes[1]) - 1,
+        Number(partes[2])
+      );
+
+      return new Intl.DateTimeFormat(
+        'es-ES',
+        {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long'
+        }
+      ).format(fecha);
+    }
+
+
     if (window.partidos && Array.isArray(window.partidos)) {
 
-      document.getElementById('contador').textContent =
-        window.partidos.length + ' partidos cargados';
+      const grupos = {};
 
-      console.log('Partidos cargados:', window.partidos.length);
-      console.log('Primer partido:', window.partidos[0]);
+
+      // Agrupamos por coordenadas.
+      // Así varios partidos en el mismo estadio
+      // aparecen dentro del mismo marcador.
+
+      window.partidos.forEach(partido => {
+
+        if (
+          partido.latitud == null ||
+          partido.longitud == null
+        ) {
+          return;
+        }
+
+        const clave =
+          partido.latitud + '|' + partido.longitud;
+
+
+        if (!grupos[clave]) {
+
+          grupos[clave] = {
+            latitud: partido.latitud,
+            longitud: partido.longitud,
+            estadio: partido.estadio,
+            provincia: partido.provincia,
+            pais: partido.pais,
+            partidos: []
+          };
+
+        }
+
+
+        grupos[clave].partidos.push(partido);
+
+      });
+
+
+      const limites = [];
+
+
+      Object.values(grupos).forEach(grupo => {
+
+        // Ordenar partidos por fecha y hora
+
+        grupo.partidos.sort((a, b) => {
+
+          const fechaA = a.fecha + ' ' + a.hora;
+          const fechaB = b.fecha + ' ' + b.hora;
+
+          return fechaA.localeCompare(fechaB);
+
+        });
+
+
+        // Agrupar los partidos del marcador por fecha
+
+        const porFecha = {};
+
+        grupo.partidos.forEach(partido => {
+
+          if (!porFecha[partido.fecha]) {
+            porFecha[partido.fecha] = [];
+          }
+
+          porFecha[partido.fecha].push(partido);
+
+        });
+
+
+        let contenidoPopup = `
+
+          <div class="popup-estadio">
+            ${escapar(grupo.estadio)}
+          </div>
+
+          <div class="popup-lugar">
+            ${escapar(grupo.provincia)} · ${escapar(grupo.pais)}
+          </div>
+
+        `;
+
+
+        Object.keys(porFecha)
+          .sort()
+          .forEach(fecha => {
+
+            contenidoPopup += `
+
+              <div class="popup-fecha">
+                ${escapar(formatearFecha(fecha))}
+              </div>
+
+            `;
+
+
+            porFecha[fecha].forEach(partido => {
+
+              contenidoPopup += `
+
+                <div class="popup-partido">
+
+                  <span class="popup-hora">
+                    ${escapar(partido.hora)}
+                  </span>
+
+                  &nbsp;
+
+                  ${escapar(partido.local)}
+                  vs
+                  ${escapar(partido.visitante)}
+
+                </div>
+
+              `;
+
+            });
+
+          });
+
+
+        const cantidad = grupo.partidos.length;
+
+
+        const icono = L.divIcon({
+
+          className: '',
+
+          html: `
+            <div class="marker-partidos">
+              ${cantidad}
+            </div>
+          `,
+
+          iconSize: [32, 32],
+
+          iconAnchor: [16, 16]
+
+        });
+
+
+        L.marker(
+          [grupo.latitud, grupo.longitud],
+          { icon: icono }
+        )
+        .addTo(map)
+        .bindPopup(
+          contenidoPopup,
+          {
+            maxWidth: 400,
+            maxHeight: 400
+          }
+        );
+
+
+        limites.push([
+          grupo.latitud,
+          grupo.longitud
+        ]);
+
+      });
+
+
+      document.getElementById('contador').textContent =
+        window.partidos.length +
+        ' partidos · ' +
+        Object.keys(grupos).length +
+        ' ubicaciones';
+
+
+      // Ajustar automáticamente el mapa
+      // para que se vean todos los marcadores
+
+      if (limites.length > 0) {
+
+        map.fitBounds(
+          limites,
+          {
+            padding: [40, 40]
+          }
+        );
+
+      }
+
 
     } else {
 
       document.getElementById('contador').textContent =
         'Error al cargar partidos.js';
 
-      console.error('No se ha podido cargar partidos.js');
     }
+
   </script>
 
 </body>
