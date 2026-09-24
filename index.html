@@ -16,20 +16,40 @@
       margin: 0;
       padding: 0;
       height: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    #topbar {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      background: white;
+      border-bottom: 1px solid #ddd;
+      box-sizing: border-box;
+      font-weight: bold;
     }
 
     #map {
       width: 100%;
-      height: 100vh;
+      height: calc(100vh - 52px);
     }
   </style>
 </head>
 
 <body>
 
+  <div id="topbar">
+    <span id="contador">Cargando partidos...</span>
+  </div>
+
   <div id="map"></div>
 
+  <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Nuestros datos -->
+  <script src="partidos.js"></script>
 
   <script>
     const map = L.map('map').setView([40.5, -3.5], 5);
@@ -41,6 +61,23 @@
         attribution: '&copy; OpenStreetMap contributors'
       }
     ).addTo(map);
+
+    // Comprobamos que partidos.js se carga correctamente
+    if (window.partidos && Array.isArray(window.partidos)) {
+
+      document.getElementById('contador').textContent =
+        window.partidos.length + ' partidos cargados';
+
+      console.log('Partidos cargados:', window.partidos.length);
+      console.log('Primer partido:', window.partidos[0]);
+
+    } else {
+
+      document.getElementById('contador').textContent =
+        'Error al cargar partidos.js';
+
+      console.error('No se ha podido cargar partidos.js');
+    }
   </script>
 
 </body>
