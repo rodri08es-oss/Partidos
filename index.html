@@ -12,6 +12,7 @@
   />
 
   <style>
+
     html, body {
       margin: 0;
       padding: 0;
@@ -19,45 +20,163 @@
       font-family: Arial, sans-serif;
     }
 
-    #topbar {
-      height: 52px;
+    body {
       display: flex;
-      align-items: center;
-      padding: 0 16px;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+
+    /* =========================
+       SELECTOR DE FECHAS
+       ========================= */
+
+    #fechas {
+      display: flex;
+      align-items: stretch;
+      gap: 7px;
+
+      padding: 9px 10px;
+
       background: white;
       border-bottom: 1px solid #ddd;
-      box-sizing: border-box;
+
+      overflow-x: auto;
+      overflow-y: hidden;
+
+      flex-shrink: 0;
+
+      scrollbar-width: thin;
+    }
+
+
+    .fecha-btn {
+      min-width: 68px;
+      height: 60px;
+
+      padding: 5px 8px;
+
+      background: white;
+
+      border: 1px solid #d5d5d5;
+      border-radius: 8px;
+
+      cursor: pointer;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      font-family: Arial, sans-serif;
+
+      color: #222;
+
+      transition:
+        background 0.15s,
+        border-color 0.15s,
+        color 0.15s;
+    }
+
+
+    .fecha-btn:hover {
+      background: #f3f6fb;
+      border-color: #b6c6dd;
+    }
+
+
+    .fecha-btn.activa {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+
+
+    .fecha-btn.activa:hover {
+      background: #1d4ed8;
+    }
+
+
+    .fecha-dia-semana {
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 1px;
+    }
+
+
+    .fecha-numero {
+      font-size: 20px;
+      line-height: 21px;
       font-weight: bold;
     }
 
+
+    .fecha-mes {
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+
+    .fecha-todos {
+      min-width: 72px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+
+    /* =========================
+       MAPA
+       ========================= */
+
     #map {
       width: 100%;
-      height: calc(100vh - 52px);
+      flex: 1;
+      min-height: 0;
     }
+
+
+    /* =========================
+       MARCADORES
+       ========================= */
 
     .marker-partidos {
       background: #2563eb;
       color: white;
+
       border: 2px solid white;
       border-radius: 50%;
+
       width: 32px;
       height: 32px;
+
       display: flex;
       align-items: center;
       justify-content: center;
+
       font-size: 12px;
       font-weight: bold;
+
       box-shadow: 0 1px 6px rgba(0,0,0,0.4);
     }
+
+
+    /* =========================
+       POPUPS
+       ========================= */
 
     .popup-partido {
       padding: 4px 0 10px 0;
     }
 
+
     .popup-partido + .popup-partido {
       border-top: 1px solid #ddd;
       padding-top: 10px;
     }
+
 
     .popup-titulo {
       font-size: 15px;
@@ -66,6 +185,7 @@
       color: #111;
     }
 
+
     .popup-fecha {
       font-size: 13px;
       font-weight: bold;
@@ -73,10 +193,12 @@
       color: #333;
     }
 
+
     .popup-estadio {
       font-size: 13px;
       margin-bottom: 3px;
     }
+
 
     .popup-estadio a {
       color: #2563eb;
@@ -84,43 +206,100 @@
       font-weight: 600;
     }
 
+
     .popup-estadio a:hover {
       text-decoration: underline;
     }
+
 
     .popup-lugar {
       font-size: 12px;
       color: #777;
     }
+
+
+    /* =========================
+       MÓVIL
+       ========================= */
+
+    @media (max-width: 600px) {
+
+      #fechas {
+        padding: 7px 6px;
+        gap: 5px;
+      }
+
+      .fecha-btn {
+        min-width: 62px;
+        height: 56px;
+      }
+
+      .fecha-numero {
+        font-size: 19px;
+      }
+
+    }
+
   </style>
 </head>
 
+
 <body>
 
-  <div id="topbar">
-    <span id="contador">Cargando partidos...</span>
-  </div>
+  <div id="fechas"></div>
 
   <div id="map"></div>
 
+
   <!-- Leaflet -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+  </script>
+
 
   <!-- Datos -->
   <script src="partidos.js"></script>
 
+
   <script>
 
-    const map = L.map('map').setView([42, 2], 5);
+    /* =========================
+       MAPA
+       ========================= */
+
+    const map = L.map('map').setView(
+      [42, 2],
+      5
+    );
+
 
     L.tileLayer(
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
       {
         maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
+        attribution:
+          '&copy; OpenStreetMap contributors'
       }
     ).addTo(map);
 
+
+    const capaPartidos =
+      L.layerGroup().addTo(map);
+
+
+
+    /* =========================
+       VARIABLES
+       ========================= */
+
+    const fechasSeleccionadas =
+      new Set();
+
+
+
+    /* =========================
+       FUNCIONES AUXILIARES
+       ========================= */
 
     function escapar(texto) {
 
@@ -134,15 +313,24 @@
     }
 
 
-    function formatearFecha(fechaISO) {
+    function crearFecha(fechaISO) {
 
-      const partes = fechaISO.split('-');
+      const partes =
+        fechaISO.split('-');
 
-      const fecha = new Date(
+      return new Date(
         Number(partes[0]),
         Number(partes[1]) - 1,
         Number(partes[2])
       );
+
+    }
+
+
+    function formatearFecha(fechaISO) {
+
+      const fecha =
+        crearFecha(fechaISO);
 
       return new Intl.DateTimeFormat(
         'es-ES',
@@ -156,178 +344,610 @@
     }
 
 
-    if (window.partidos && Array.isArray(window.partidos)) {
+    function datosBotonFecha(fechaISO) {
 
-      const grupos = {};
-
-
-      // Agrupar partidos que comparten coordenadas
-
-      window.partidos.forEach(partido => {
-
-        if (
-          partido.latitud == null ||
-          partido.longitud == null
-        ) {
-          return;
-        }
-
-        const clave =
-          partido.latitud + '|' + partido.longitud;
+      const fecha =
+        crearFecha(fechaISO);
 
 
-        if (!grupos[clave]) {
-
-          grupos[clave] = {
-            latitud: partido.latitud,
-            longitud: partido.longitud,
-            partidos: []
-          };
-
-        }
-
-
-        grupos[clave].partidos.push(partido);
-
-      });
-
-
-      const limites = [];
-
-
-      Object.values(grupos).forEach(grupo => {
-
-
-        // Ordenar por fecha y hora
-
-        grupo.partidos.sort((a, b) => {
-
-          const fechaA = a.fecha + ' ' + a.hora;
-          const fechaB = b.fecha + ' ' + b.hora;
-
-          return fechaA.localeCompare(fechaB);
-
-        });
-
-
-        let contenidoPopup = '';
-
-
-        grupo.partidos.forEach(partido => {
-
-          const urlGoogleMaps =
-            `https://www.google.com/maps?q=${partido.latitud},${partido.longitud}`;
-
-          contenidoPopup += `
-
-            <div class="popup-partido">
-
-              <div class="popup-titulo">
-                ${escapar(partido.local)}
-                vs
-                ${escapar(partido.visitante)}
-              </div>
-
-              <div class="popup-fecha">
-                ${escapar(formatearFecha(partido.fecha))}
-                ·
-                ${escapar(partido.hora)}
-              </div>
-
-              <div class="popup-estadio">
-                <a
-                  href="${urlGoogleMaps}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Abrir en Google Maps"
-                >
-                  📍 ${escapar(partido.estadio)}
-                </a>
-              </div>
-
-              <div class="popup-lugar">
-                ${escapar(partido.provincia)}
-                ·
-                ${escapar(partido.pais)}
-              </div>
-
-            </div>
-
-          `;
-
-        });
-
-
-        const cantidad = grupo.partidos.length;
-
-
-        const icono = L.divIcon({
-
-          className: '',
-
-          html: `
-            <div class="marker-partidos">
-              ${cantidad}
-            </div>
-          `,
-
-          iconSize: [32, 32],
-
-          iconAnchor: [16, 16]
-
-        });
-
-
-        L.marker(
-          [
-            grupo.latitud,
-            grupo.longitud
-          ],
+      const diaSemana =
+        new Intl.DateTimeFormat(
+          'es-ES',
           {
-            icon: icono
+            weekday: 'short'
           }
         )
-        .addTo(map)
-        .bindPopup(
-          contenidoPopup,
+        .format(fecha)
+        .replace('.', '')
+        .toUpperCase();
+
+
+      const numero =
+        fecha.getDate();
+
+
+      const mes =
+        new Intl.DateTimeFormat(
+          'es-ES',
           {
-            maxWidth: 400,
-            maxHeight: 420
+            month: 'short'
           }
+        )
+        .format(fecha)
+        .replace('.', '')
+        .toUpperCase();
+
+
+      return {
+        diaSemana,
+        numero,
+        mes
+      };
+
+    }
+
+
+
+    /* =========================
+       ACTUALIZAR BOTONES
+       ========================= */
+
+    function actualizarEstadoBotones() {
+
+      const botonTodos =
+        document.querySelector(
+          '[data-fecha="todos"]'
         );
 
 
-        limites.push([
-          grupo.latitud,
-          grupo.longitud
-        ]);
+      if (
+        fechasSeleccionadas.size === 0
+      ) {
 
-      });
+        botonTodos.classList.add(
+          'activa'
+        );
 
+      } else {
 
-      document.getElementById('contador').textContent =
-        window.partidos.length +
-        ' partidos · ' +
-        Object.keys(grupos).length +
-        ' ubicaciones';
-
-
-      if (limites.length > 0) {
-
-        map.fitBounds(
-          limites,
-          {
-            padding: [40, 40]
-          }
+        botonTodos.classList.remove(
+          'activa'
         );
 
       }
 
 
-    } else {
+      document
+        .querySelectorAll(
+          '.fecha-btn[data-fecha]:not([data-fecha="todos"])'
+        )
+        .forEach(boton => {
 
-      document.getElementById('contador').textContent =
-        'Error al cargar partidos.js';
+          if (
+            fechasSeleccionadas.has(
+              boton.dataset.fecha
+            )
+          ) {
+
+            boton.classList.add(
+              'activa'
+            );
+
+          } else {
+
+            boton.classList.remove(
+              'activa'
+            );
+
+          }
+
+        });
+
+    }
+
+
+
+    /* =========================
+       SELECTOR DE FECHAS
+       ========================= */
+
+    function crearSelectorFechas() {
+
+      const contenedor =
+        document.getElementById(
+          'fechas'
+        );
+
+
+      contenedor.innerHTML = '';
+
+
+      /* TODOS */
+
+      const botonTodos =
+        document.createElement(
+          'button'
+        );
+
+
+      botonTodos.className =
+        'fecha-btn fecha-todos activa';
+
+
+      botonTodos.dataset.fecha =
+        'todos';
+
+
+      botonTodos.textContent =
+        'TODOS';
+
+
+      contenedor.appendChild(
+        botonTodos
+      );
+
+
+      /* Fechas disponibles */
+
+      const fechas = [
+
+        ...new Set(
+
+          window.partidos.map(
+            partido =>
+              partido.fecha
+          )
+
+        )
+
+      ].sort();
+
+
+
+      fechas.forEach(fechaISO => {
+
+        const datos =
+          datosBotonFecha(
+            fechaISO
+          );
+
+
+        const boton =
+          document.createElement(
+            'button'
+          );
+
+
+        boton.className =
+          'fecha-btn';
+
+
+        boton.dataset.fecha =
+          fechaISO;
+
+
+        boton.innerHTML = `
+
+          <span class="fecha-dia-semana">
+            ${datos.diaSemana}
+          </span>
+
+          <span class="fecha-numero">
+            ${datos.numero}
+          </span>
+
+          <span class="fecha-mes">
+            ${datos.mes}
+          </span>
+
+        `;
+
+
+        contenedor.appendChild(
+          boton
+        );
+
+      });
+
+
+
+      /* =========================
+         CLICK EN FECHAS
+         ========================= */
+
+      contenedor.addEventListener(
+        'click',
+        function(event) {
+
+          const boton =
+            event.target.closest(
+              '.fecha-btn'
+            );
+
+
+          if (!boton) {
+            return;
+          }
+
+
+          const fecha =
+            boton.dataset.fecha;
+
+
+          /* Pulsamos TODOS */
+
+          if (
+            fecha === 'todos'
+          ) {
+
+            fechasSeleccionadas
+              .clear();
+
+
+            actualizarEstadoBotones();
+
+
+            pintarPartidos();
+
+
+            return;
+          }
+
+
+          /* Pulsamos una fecha */
+
+          if (
+            fechasSeleccionadas.has(
+              fecha
+            )
+          ) {
+
+            fechasSeleccionadas.delete(
+              fecha
+            );
+
+          } else {
+
+            fechasSeleccionadas.add(
+              fecha
+            );
+
+          }
+
+
+          actualizarEstadoBotones();
+
+
+          pintarPartidos();
+
+        }
+      );
+
+    }
+
+
+
+    /* =========================
+       PINTAR PARTIDOS
+       ========================= */
+
+    function pintarPartidos() {
+
+      capaPartidos.clearLayers();
+
+
+      let partidosFiltrados;
+
+
+      /* Ninguna fecha seleccionada =
+         mostrar TODOS */
+
+      if (
+        fechasSeleccionadas.size === 0
+      ) {
+
+        partidosFiltrados =
+          window.partidos;
+
+      } else {
+
+        partidosFiltrados =
+          window.partidos.filter(
+            partido =>
+              fechasSeleccionadas.has(
+                partido.fecha
+              )
+          );
+
+      }
+
+
+
+      /* =========================
+         AGRUPAR POR UBICACIÓN
+         ========================= */
+
+      const grupos = {};
+
+
+      partidosFiltrados.forEach(
+        partido => {
+
+          if (
+            partido.latitud == null ||
+            partido.longitud == null
+          ) {
+            return;
+          }
+
+
+          const clave =
+            partido.latitud +
+            '|' +
+            partido.longitud;
+
+
+          if (!grupos[clave]) {
+
+            grupos[clave] = {
+
+              latitud:
+                partido.latitud,
+
+              longitud:
+                partido.longitud,
+
+              partidos: []
+
+            };
+
+          }
+
+
+          grupos[clave]
+            .partidos
+            .push(partido);
+
+        }
+      );
+
+
+
+      const limites = [];
+
+
+
+      /* =========================
+         MARCADORES
+         ========================= */
+
+      Object.values(grupos)
+        .forEach(grupo => {
+
+
+          grupo.partidos.sort(
+            (a, b) => {
+
+              const fechaA =
+                a.fecha +
+                ' ' +
+                a.hora;
+
+              const fechaB =
+                b.fecha +
+                ' ' +
+                b.hora;
+
+
+              return fechaA
+                .localeCompare(
+                  fechaB
+                );
+
+            }
+          );
+
+
+          let contenidoPopup = '';
+
+
+          grupo.partidos
+            .forEach(partido => {
+
+
+              const urlGoogleMaps =
+
+                `https://www.google.com/maps?q=${partido.latitud},${partido.longitud}`;
+
+
+              contenidoPopup += `
+
+                <div class="popup-partido">
+
+
+                  <div class="popup-titulo">
+
+                    ${escapar(
+                      partido.local
+                    )}
+
+                    vs
+
+                    ${escapar(
+                      partido.visitante
+                    )}
+
+                  </div>
+
+
+                  <div class="popup-fecha">
+
+                    ${escapar(
+                      formatearFecha(
+                        partido.fecha
+                      )
+                    )}
+
+                    ·
+
+                    ${escapar(
+                      partido.hora
+                    )}
+
+                  </div>
+
+
+                  <div class="popup-estadio">
+
+                    <a
+                      href="${urlGoogleMaps}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Abrir en Google Maps"
+                    >
+
+                      📍
+                      ${escapar(
+                        partido.estadio
+                      )}
+
+                    </a>
+
+                  </div>
+
+
+                  <div class="popup-lugar">
+
+                    ${escapar(
+                      partido.provincia
+                    )}
+
+                    ·
+
+                    ${escapar(
+                      partido.pais
+                    )}
+
+                  </div>
+
+
+                </div>
+
+              `;
+
+            });
+
+
+
+          const cantidad =
+            grupo.partidos.length;
+
+
+
+          const icono =
+            L.divIcon({
+
+              className: '',
+
+              html: `
+
+                <div class="marker-partidos">
+                  ${cantidad}
+                </div>
+
+              `,
+
+              iconSize:
+                [32, 32],
+
+              iconAnchor:
+                [16, 16]
+
+            });
+
+
+
+          L.marker(
+            [
+              grupo.latitud,
+              grupo.longitud
+            ],
+            {
+              icon: icono
+            }
+          )
+
+          .addTo(
+            capaPartidos
+          )
+
+          .bindPopup(
+            contenidoPopup,
+            {
+              maxWidth: 400,
+              maxHeight: 420
+            }
+          );
+
+
+          limites.push(
+            [
+              grupo.latitud,
+              grupo.longitud
+            ]
+          );
+
+        });
+
+
+
+      /* =========================
+         AJUSTAR MAPA
+         ========================= */
+
+      if (
+        limites.length === 1
+      ) {
+
+        map.setView(
+          limites[0],
+          11
+        );
+
+      }
+
+      else if (
+        limites.length > 1
+      ) {
+
+        map.fitBounds(
+          limites,
+          {
+            padding:
+              [40, 40]
+          }
+        );
+
+      }
+
+    }
+
+
+
+    /* =========================
+       INICIAR
+       ========================= */
+
+    if (
+      window.partidos &&
+      Array.isArray(
+        window.partidos
+      )
+    ) {
+
+      crearSelectorFechas();
+
+      pintarPartidos();
 
     }
 
