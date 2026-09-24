@@ -76,7 +76,16 @@
     .popup-estadio {
       font-size: 13px;
       margin-bottom: 3px;
-      color: #444;
+    }
+
+    .popup-estadio a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .popup-estadio a:hover {
+      text-decoration: underline;
     }
 
     .popup-lugar {
@@ -206,6 +215,9 @@
 
         grupo.partidos.forEach(partido => {
 
+          const urlGoogleMaps =
+            `https://www.google.com/maps?q=${partido.latitud},${partido.longitud}`;
+
           contenidoPopup += `
 
             <div class="popup-partido">
@@ -223,7 +235,14 @@
               </div>
 
               <div class="popup-estadio">
-                ${escapar(partido.estadio)}
+                <a
+                  href="${urlGoogleMaps}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Abrir en Google Maps"
+                >
+                  📍 ${escapar(partido.estadio)}
+                </a>
               </div>
 
               <div class="popup-lugar">
@@ -312,6 +331,10 @@
 
     }
 
+  </script>
+
+</body>
+</html>
   </script>
 
 </body>
