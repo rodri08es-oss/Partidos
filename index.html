@@ -50,33 +50,38 @@
       box-shadow: 0 1px 6px rgba(0,0,0,0.4);
     }
 
-    .popup-estadio {
-      font-size: 15px;
-      font-weight: bold;
-      margin-bottom: 3px;
+    .popup-partido {
+      padding: 4px 0 10px 0;
     }
 
-    .popup-lugar {
-      color: #666;
-      font-size: 12px;
-      margin-bottom: 10px;
+    .popup-partido + .popup-partido {
+      border-top: 1px solid #ddd;
+      padding-top: 10px;
+    }
+
+    .popup-titulo {
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #111;
     }
 
     .popup-fecha {
+      font-size: 13px;
       font-weight: bold;
-      margin-top: 10px;
-      margin-bottom: 5px;
-      padding-bottom: 3px;
-      border-bottom: 1px solid #ddd;
+      margin-bottom: 7px;
+      color: #333;
     }
 
-    .popup-partido {
-      margin: 6px 0;
-      line-height: 1.4;
+    .popup-estadio {
+      font-size: 13px;
+      margin-bottom: 3px;
+      color: #444;
     }
 
-    .popup-hora {
-      font-weight: bold;
+    .popup-lugar {
+      font-size: 12px;
+      color: #777;
     }
   </style>
 </head>
@@ -92,7 +97,7 @@
   <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Datos de los partidos -->
+  <!-- Datos -->
   <script src="partidos.js"></script>
 
   <script>
@@ -109,12 +114,14 @@
 
 
     function escapar(texto) {
+
       return String(texto ?? '')
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
+
     }
 
 
@@ -136,6 +143,7 @@
           month: 'long'
         }
       ).format(fecha);
+
     }
 
 
@@ -144,9 +152,7 @@
       const grupos = {};
 
 
-      // Agrupamos por coordenadas.
-      // Así varios partidos en el mismo estadio
-      // aparecen dentro del mismo marcador.
+      // Agrupar partidos que comparten coordenadas
 
       window.partidos.forEach(partido => {
 
@@ -166,9 +172,6 @@
           grupos[clave] = {
             latitud: partido.latitud,
             longitud: partido.longitud,
-            estadio: partido.estadio,
-            provincia: partido.provincia,
-            pais: partido.pais,
             partidos: []
           };
 
@@ -185,7 +188,8 @@
 
       Object.values(grupos).forEach(grupo => {
 
-        // Ordenar partidos por fecha y hora
+
+        // Ordenar por fecha y hora
 
         grupo.partidos.sort((a, b) => {
 
@@ -197,70 +201,42 @@
         });
 
 
-        // Agrupar los partidos del marcador por fecha
+        let contenidoPopup = '';
 
-        const porFecha = {};
 
         grupo.partidos.forEach(partido => {
 
-          if (!porFecha[partido.fecha]) {
-            porFecha[partido.fecha] = [];
-          }
+          contenidoPopup += `
 
-          porFecha[partido.fecha].push(partido);
+            <div class="popup-partido">
 
-        });
-
-
-        let contenidoPopup = `
-
-          <div class="popup-estadio">
-            ${escapar(grupo.estadio)}
-          </div>
-
-          <div class="popup-lugar">
-            ${escapar(grupo.provincia)} · ${escapar(grupo.pais)}
-          </div>
-
-        `;
-
-
-        Object.keys(porFecha)
-          .sort()
-          .forEach(fecha => {
-
-            contenidoPopup += `
-
-              <div class="popup-fecha">
-                ${escapar(formatearFecha(fecha))}
+              <div class="popup-titulo">
+                ${escapar(partido.local)}
+                vs
+                ${escapar(partido.visitante)}
               </div>
 
-            `;
+              <div class="popup-fecha">
+                ${escapar(formatearFecha(partido.fecha))}
+                ·
+                ${escapar(partido.hora)}
+              </div>
 
+              <div class="popup-estadio">
+                ${escapar(partido.estadio)}
+              </div>
 
-            porFecha[fecha].forEach(partido => {
+              <div class="popup-lugar">
+                ${escapar(partido.provincia)}
+                ·
+                ${escapar(partido.pais)}
+              </div>
 
-              contenidoPopup += `
+            </div>
 
-                <div class="popup-partido">
+          `;
 
-                  <span class="popup-hora">
-                    ${escapar(partido.hora)}
-                  </span>
-
-                  &nbsp;
-
-                  ${escapar(partido.local)}
-                  vs
-                  ${escapar(partido.visitante)}
-
-                </div>
-
-              `;
-
-            });
-
-          });
+        });
 
 
         const cantidad = grupo.partidos.length;
@@ -284,15 +260,20 @@
 
 
         L.marker(
-          [grupo.latitud, grupo.longitud],
-          { icon: icono }
+          [
+            grupo.latitud,
+            grupo.longitud
+          ],
+          {
+            icon: icono
+          }
         )
         .addTo(map)
         .bindPopup(
           contenidoPopup,
           {
             maxWidth: 400,
-            maxHeight: 400
+            maxHeight: 420
           }
         );
 
@@ -311,9 +292,6 @@
         Object.keys(grupos).length +
         ' ubicaciones';
 
-
-      // Ajustar automáticamente el mapa
-      // para que se vean todos los marcadores
 
       if (limites.length > 0) {
 
