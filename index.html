@@ -219,6 +219,67 @@
 
 
     /* =========================
+       CONTROLES DE RUTA
+       ========================= */
+
+    .popup-ruta {
+      padding: 10px 0 11px 0;
+      margin-bottom: 1px;
+
+      border-top: 1px solid #e5e5e5;
+    }
+
+
+    .ruta-botones {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+
+    .ruta-btn {
+      border: 1px solid #cfd7e3;
+      border-radius: 7px;
+
+      padding: 7px 10px;
+
+      background: #f8fafc;
+      color: #222;
+
+      font-size: 12px;
+      font-weight: 600;
+      font-family: Arial, sans-serif;
+
+      cursor: pointer;
+    }
+
+
+    .ruta-btn:hover {
+      background: #eef3f9;
+    }
+
+
+    .ruta-btn.origen-actual {
+      background: #e8f0ff;
+      border-color: #2563eb;
+      color: #1d4ed8;
+      cursor: default;
+    }
+
+
+    .ruta-btn.calcular {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: white;
+    }
+
+
+    .ruta-btn.calcular:hover {
+      background: #1d4ed8;
+    }
+
+
+    /* =========================
        MÓVIL
        ========================= */
 
@@ -236,6 +297,11 @@
 
       .fecha-numero {
         font-size: 19px;
+      }
+
+      .ruta-btn {
+        min-height: 40px;
+        padding: 8px 10px;
       }
 
     }
@@ -296,6 +362,9 @@
       new Set();
 
 
+    let origenRuta = null;
+
+
 
     /* =========================
        FUNCIONES AUXILIARES
@@ -313,10 +382,12 @@
     }
 
 
+
     function crearFecha(fechaISO) {
 
       const partes =
         fechaISO.split('-');
+
 
       return new Date(
         Number(partes[0]),
@@ -327,10 +398,12 @@
     }
 
 
+
     function formatearFecha(fechaISO) {
 
       const fecha =
         crearFecha(fechaISO);
+
 
       return new Intl.DateTimeFormat(
         'es-ES',
@@ -342,6 +415,7 @@
       ).format(fecha);
 
     }
+
 
 
     function datosBotonFecha(fechaISO) {
@@ -388,8 +462,24 @@
 
 
 
+    function mismaUbicacion(a, b) {
+
+      if (!a || !b) {
+        return false;
+      }
+
+
+      return (
+        Number(a.latitud) === Number(b.latitud) &&
+        Number(a.longitud) === Number(b.longitud)
+      );
+
+    }
+
+
+
     /* =========================
-       ACTUALIZAR BOTONES
+       SELECTOR DE FECHAS
        ========================= */
 
     function actualizarEstadoBotones() {
@@ -446,10 +536,6 @@
     }
 
 
-
-    /* =========================
-       SELECTOR DE FECHAS
-       ========================= */
 
     function crearSelectorFechas() {
 
@@ -551,10 +637,6 @@
 
 
 
-      /* =========================
-         CLICK EN FECHAS
-         ========================= */
-
       contenedor.addEventListener(
         'click',
         function(event) {
@@ -574,27 +656,20 @@
             boton.dataset.fecha;
 
 
-          /* Pulsamos TODOS */
-
           if (
             fecha === 'todos'
           ) {
 
-            fechasSeleccionadas
-              .clear();
-
+            fechasSeleccionadas.clear();
 
             actualizarEstadoBotones();
 
-
             pintarPartidos();
 
-
             return;
+
           }
 
-
-          /* Pulsamos una fecha */
 
           if (
             fechasSeleccionadas.has(
@@ -617,11 +692,261 @@
 
           actualizarEstadoBotones();
 
-
           pintarPartidos();
 
         }
       );
+
+    }
+
+
+
+    /* =========================
+       CREAR CONTENIDO DE PARTIDO
+       ========================= */
+
+    function crearHTMLPartido(partido) {
+
+      const urlGoogleMaps =
+
+        `https://www.google.com/maps?q=${partido.latitud},${partido.longitud}`;
+
+
+      return `
+
+        <div class="popup-partido">
+
+          <div class="popup-titulo">
+
+            ${escapar(partido.local)}
+            vs
+            ${escapar(partido.visitante)}
+
+          </div>
+
+
+          <div class="popup-fecha">
+
+            ${escapar(
+              formatearFecha(
+                partido.fecha
+              )
+            )}
+
+            ·
+
+            ${escapar(
+              partido.hora
+            )}
+
+          </div>
+
+
+          <div class="popup-estadio">
+
+            <a
+              href="${urlGoogleMaps}"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Abrir en Google Maps"
+            >
+
+              📍
+              ${escapar(
+                partido.estadio
+              )}
+
+            </a>
+
+          </div>
+
+
+          <div class="popup-lugar">
+
+            ${escapar(
+              partido.provincia
+            )}
+
+            ·
+
+            ${escapar(
+              partido.pais
+            )}
+
+          </div>
+
+        </div>
+
+      `;
+
+    }
+
+
+
+    /* =========================
+       CONTROLES DE RUTA
+       ========================= */
+
+    function crearHTMLRuta(grupo) {
+
+      const estaUbicacionEsOrigen =
+        mismaUbicacion(
+          origenRuta,
+          grupo
+        );
+
+
+      let html = `
+
+        <div class="popup-ruta">
+
+          <div class="ruta-botones">
+
+      `;
+
+
+      if (
+        estaUbicacionEsOrigen
+      ) {
+
+        html += `
+
+          <button
+            type="button"
+            class="ruta-btn origen-actual"
+            disabled
+          >
+            🚗 Origen actual
+          </button>
+
+        `;
+
+      } else {
+
+        html += `
+
+          <button
+            type="button"
+            class="ruta-btn btn-origen"
+            data-latitud="${grupo.latitud}"
+            data-longitud="${grupo.longitud}"
+            data-estadio="${escapar(grupo.estadio)}"
+          >
+            🚗 Origen de ruta
+          </button>
+
+        `;
+
+      }
+
+
+
+      /*
+       Calcular ruta solo aparece
+       cuando ya existe un origen
+       y la ubicación actual es distinta.
+      */
+
+      if (
+        origenRuta &&
+        !estaUbicacionEsOrigen
+      ) {
+
+        html += `
+
+          <button
+            type="button"
+            class="ruta-btn calcular btn-calcular-ruta"
+            data-latitud="${grupo.latitud}"
+            data-longitud="${grupo.longitud}"
+          >
+            ⏱️ Calcular ruta
+          </button>
+
+        `;
+
+      }
+
+
+      html += `
+
+          </div>
+
+        </div>
+
+      `;
+
+
+      return html;
+
+    }
+
+
+
+    /* =========================
+       CREAR POPUP
+       ========================= */
+
+    function crearPopup(grupo) {
+
+      let contenidoPopup = '';
+
+
+      grupo.partidos.sort(
+        (a, b) => {
+
+          const fechaA =
+            a.fecha +
+            ' ' +
+            a.hora;
+
+          const fechaB =
+            b.fecha +
+            ' ' +
+            b.hora;
+
+
+          return fechaA.localeCompare(
+            fechaB
+          );
+
+        }
+      );
+
+
+
+      grupo.partidos.forEach(
+        (partido, indice) => {
+
+
+          contenidoPopup +=
+            crearHTMLPartido(
+              partido
+            );
+
+
+          /*
+           Los controles de ruta
+           aparecen UNA SOLA VEZ,
+           justo después del primer partido.
+          */
+
+          if (
+            indice === 0
+          ) {
+
+            contenidoPopup +=
+              crearHTMLRuta(
+                grupo
+              );
+
+          }
+
+        }
+      );
+
+
+      return contenidoPopup;
 
     }
 
@@ -638,9 +963,6 @@
 
       let partidosFiltrados;
 
-
-      /* Ninguna fecha seleccionada =
-         mostrar TODOS */
 
       if (
         fechasSeleccionadas.size === 0
@@ -697,6 +1019,9 @@
               longitud:
                 partido.longitud,
 
+              estadio:
+                partido.estadio,
+
               partidos: []
 
             };
@@ -723,120 +1048,6 @@
 
       Object.values(grupos)
         .forEach(grupo => {
-
-
-          grupo.partidos.sort(
-            (a, b) => {
-
-              const fechaA =
-                a.fecha +
-                ' ' +
-                a.hora;
-
-              const fechaB =
-                b.fecha +
-                ' ' +
-                b.hora;
-
-
-              return fechaA
-                .localeCompare(
-                  fechaB
-                );
-
-            }
-          );
-
-
-          let contenidoPopup = '';
-
-
-          grupo.partidos
-            .forEach(partido => {
-
-
-              const urlGoogleMaps =
-
-                `https://www.google.com/maps?q=${partido.latitud},${partido.longitud}`;
-
-
-              contenidoPopup += `
-
-                <div class="popup-partido">
-
-
-                  <div class="popup-titulo">
-
-                    ${escapar(
-                      partido.local
-                    )}
-
-                    vs
-
-                    ${escapar(
-                      partido.visitante
-                    )}
-
-                  </div>
-
-
-                  <div class="popup-fecha">
-
-                    ${escapar(
-                      formatearFecha(
-                        partido.fecha
-                      )
-                    )}
-
-                    ·
-
-                    ${escapar(
-                      partido.hora
-                    )}
-
-                  </div>
-
-
-                  <div class="popup-estadio">
-
-                    <a
-                      href="${urlGoogleMaps}"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Abrir en Google Maps"
-                    >
-
-                      📍
-                      ${escapar(
-                        partido.estadio
-                      )}
-
-                    </a>
-
-                  </div>
-
-
-                  <div class="popup-lugar">
-
-                    ${escapar(
-                      partido.provincia
-                    )}
-
-                    ·
-
-                    ${escapar(
-                      partido.pais
-                    )}
-
-                  </div>
-
-
-                </div>
-
-              `;
-
-            });
-
 
 
           const cantidad =
@@ -867,26 +1078,49 @@
 
 
 
-          L.marker(
-            [
-              grupo.latitud,
-              grupo.longitud
-            ],
-            {
-              icon: icono
-            }
-          )
+          const marcador =
+            L.marker(
 
-          .addTo(
-            capaPartidos
-          )
+              [
+                grupo.latitud,
+                grupo.longitud
+              ],
 
-          .bindPopup(
-            contenidoPopup,
+              {
+                icon:
+                  icono
+              }
+
+            )
+
+            .addTo(
+              capaPartidos
+            );
+
+
+          /*
+           El popup se genera justo
+           cuando se abre.
+
+           Así siempre conoce cuál es
+           el origen de ruta actual.
+          */
+
+          marcador.bindPopup(
+
+            function() {
+
+              return crearPopup(
+                grupo
+              );
+
+            },
+
             {
               maxWidth: 400,
               maxHeight: 420
             }
+
           );
 
 
@@ -931,6 +1165,119 @@
       }
 
     }
+
+
+
+    /* =========================
+       EVENTOS DE RUTA
+       ========================= */
+
+    document.addEventListener(
+      'click',
+      function(event) {
+
+
+        /* =====================
+           ELEGIR ORIGEN
+           ===================== */
+
+        const botonOrigen =
+          event.target.closest(
+            '.btn-origen'
+          );
+
+
+        if (botonOrigen) {
+
+          origenRuta = {
+
+            latitud:
+              Number(
+                botonOrigen.dataset.latitud
+              ),
+
+            longitud:
+              Number(
+                botonOrigen.dataset.longitud
+              ),
+
+            estadio:
+              botonOrigen.dataset.estadio
+
+          };
+
+
+          /*
+           Cerramos el popup.
+
+           Al volverlo a abrir,
+           aparecerá "Origen actual".
+          */
+
+          map.closePopup();
+
+
+          return;
+
+        }
+
+
+
+        /* =====================
+           CALCULAR RUTA
+           ===================== */
+
+        const botonRuta =
+          event.target.closest(
+            '.btn-calcular-ruta'
+          );
+
+
+        if (
+          botonRuta &&
+          origenRuta
+        ) {
+
+
+          const destinoLat =
+            Number(
+              botonRuta.dataset.latitud
+            );
+
+
+          const destinoLon =
+            Number(
+              botonRuta.dataset.longitud
+            );
+
+
+          const urlRuta =
+
+            'https://www.google.com/maps/dir/?api=1' +
+
+            '&origin=' +
+            origenRuta.latitud +
+            ',' +
+            origenRuta.longitud +
+
+            '&destination=' +
+            destinoLat +
+            ',' +
+            destinoLon +
+
+            '&travelmode=driving';
+
+
+          window.open(
+            urlRuta,
+            '_blank',
+            'noopener,noreferrer'
+          );
+
+        }
+
+      }
+    );
 
 
 
