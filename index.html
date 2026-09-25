@@ -232,7 +232,7 @@
 
     .ruta-botones {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 6px;
     }
 
@@ -241,7 +241,7 @@
       border: 1px solid #cfd7e3;
       border-radius: 7px;
 
-      padding: 7px 10px;
+      padding: 7px 8px;
 
       background: #f8fafc;
       color: #222;
@@ -251,6 +251,8 @@
       font-family: Arial, sans-serif;
 
       cursor: pointer;
+
+      white-space: nowrap;
     }
 
 
@@ -301,7 +303,7 @@
 
       .ruta-btn {
         min-height: 40px;
-        padding: 8px 10px;
+        padding: 8px 8px;
       }
 
     }
@@ -832,7 +834,7 @@
             data-longitud="${grupo.longitud}"
             data-estadio="${escapar(grupo.estadio)}"
           >
-            🚗 Origen de ruta
+            🚗 Origen ruta
           </button>
 
         `;
@@ -840,12 +842,6 @@
       }
 
 
-
-      /*
-       Calcular ruta solo aparece
-       cuando ya existe un origen
-       y la ubicación actual es distinta.
-      */
 
       if (
         origenRuta &&
@@ -924,12 +920,6 @@
               partido
             );
 
-
-          /*
-           Los controles de ruta
-           aparecen UNA SOLA VEZ,
-           justo después del primer partido.
-          */
 
           if (
             indice === 0
@@ -1098,14 +1088,6 @@
             );
 
 
-          /*
-           El popup se genera justo
-           cuando se abre.
-
-           Así siempre conoce cuál es
-           el origen de ruta actual.
-          */
-
           marcador.bindPopup(
 
             function() {
@@ -1207,13 +1189,6 @@
           };
 
 
-          /*
-           Cerramos el popup.
-
-           Al volverlo a abrir,
-           aparecerá "Origen actual".
-          */
-
           map.closePopup();
 
 
@@ -1298,10 +1273,6 @@
 
     }
 
-  </script>
-
-</body>
-</html>
   </script>
 
 </body>
