@@ -367,19 +367,9 @@
     ).addTo(map);
 
 
-    /*
-     AGRUPACIÓN DE UBICACIONES
-
-     - Desde lejos, ubicaciones cercanas
-       se agrupan automáticamente.
-
-     - Al acercar el mapa se separan.
-
-     - Al pulsar el grupo también hace zoom.
-
-     - Si al máximo zoom siguen demasiado
-       próximas, se despliegan alrededor.
-    */
+    /* =========================
+       AGRUPACIÓN DE UBICACIONES
+       ========================= */
 
     const capaPartidos =
       L.markerClusterGroup({
@@ -390,7 +380,75 @@
 
         spiderfyOnMaxZoom: true,
 
-        maxClusterRadius: 45
+        maxClusterRadius: 45,
+
+
+        /*
+         El número mostrado en el cluster
+         es el TOTAL DE PARTIDOS,
+         no el número de ubicaciones.
+        */
+
+        iconCreateFunction: function(cluster) {
+
+          const marcadores =
+            cluster.getAllChildMarkers();
+
+
+          let totalPartidos = 0;
+
+
+          marcadores.forEach(
+            marcador => {
+
+              totalPartidos +=
+                marcador.options.numeroPartidos || 0;
+
+            }
+          );
+
+
+          let clase =
+            'marker-cluster-small';
+
+
+          if (
+            totalPartidos >= 10
+          ) {
+
+            clase =
+              'marker-cluster-medium';
+
+          }
+
+
+          if (
+            totalPartidos >= 100
+          ) {
+
+            clase =
+              'marker-cluster-large';
+
+          }
+
+
+          return L.divIcon({
+
+            html:
+              '<div><span>' +
+              totalPartidos +
+              '</span></div>',
+
+            className:
+              'marker-cluster ' +
+              clase,
+
+            iconSize:
+              L.point(40, 40)
+
+          });
+
+        }
 
       });
 
@@ -1005,15 +1063,6 @@
 
     function pintarPartidos() {
 
-      /*
-       Esta función sigue funcionando igual
-       que antes.
-
-       MarkerClusterGroup también admite
-       clearLayers(), así que los filtros
-       por fecha siguen funcionando.
-      */
-
       capaPartidos.clearLayers();
 
 
@@ -1134,6 +1183,15 @@
 
 
 
+          /*
+           numeroPartidos guarda el número
+           real de partidos de esta ubicación.
+
+           El cluster utiliza este dato para
+           sumar los partidos de todas las
+           ubicaciones agrupadas.
+          */
+
           const marcador =
             L.marker(
 
@@ -1144,7 +1202,10 @@
 
               {
                 icon:
-                  icono
+                  icono,
+
+                numeroPartidos:
+                  cantidad
               }
 
             )
