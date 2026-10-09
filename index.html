@@ -6,9 +6,21 @@
 
   <title>Partidos selecciones</title>
 
+  <!-- Leaflet -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <!-- Leaflet MarkerCluster -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"
+  />
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css"
   />
 
   <style>
@@ -323,6 +335,12 @@
   </script>
 
 
+  <!-- Leaflet MarkerCluster -->
+  <script
+    src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js">
+  </script>
+
+
   <!-- Datos -->
   <script src="partidos.js"></script>
 
@@ -349,8 +367,37 @@
     ).addTo(map);
 
 
+    /*
+     AGRUPACIÓN DE UBICACIONES
+
+     - Desde lejos, ubicaciones cercanas
+       se agrupan automáticamente.
+
+     - Al acercar el mapa se separan.
+
+     - Al pulsar el grupo también hace zoom.
+
+     - Si al máximo zoom siguen demasiado
+       próximas, se despliegan alrededor.
+    */
+
     const capaPartidos =
-      L.layerGroup().addTo(map);
+      L.markerClusterGroup({
+
+        showCoverageOnHover: false,
+
+        zoomToBoundsOnClick: true,
+
+        spiderfyOnMaxZoom: true,
+
+        maxClusterRadius: 45
+
+      });
+
+
+    map.addLayer(
+      capaPartidos
+    );
 
 
 
@@ -958,6 +1005,15 @@
 
     function pintarPartidos() {
 
+      /*
+       Esta función sigue funcionando igual
+       que antes.
+
+       MarkerClusterGroup también admite
+       clearLayers(), así que los filtros
+       por fecha siguen funcionando.
+      */
+
       capaPartidos.clearLayers();
 
 
@@ -1298,10 +1354,6 @@
 
     }
 
-  </script>
-
-</body>
-</html>
   </script>
 
 </body>
