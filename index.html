@@ -151,7 +151,7 @@
 
 
     /* =========================
-       MARCADORES
+       MARCADORES INDIVIDUALES
        ========================= */
 
     .marker-partidos {
@@ -172,6 +172,58 @@
       font-weight: bold;
 
       box-shadow: 0 1px 6px rgba(0,0,0,0.4);
+    }
+
+
+    /* =========================
+       COLORES DE LOS CLUSTERS
+       ========================= */
+
+    /*
+       Menos de 10 partidos
+       Amarillo
+    */
+
+    .marker-cluster-small {
+      background-color: rgba(250, 204, 21, 0.60);
+    }
+
+    .marker-cluster-small div {
+      background-color: #eab308;
+      color: #111;
+      font-weight: bold;
+    }
+
+
+    /*
+       10 o más partidos
+       Amarillo / naranja oscuro
+    */
+
+    .marker-cluster-medium {
+      background-color: rgba(245, 158, 11, 0.60);
+    }
+
+    .marker-cluster-medium div {
+      background-color: #d97706;
+      color: white;
+      font-weight: bold;
+    }
+
+
+    /*
+       100 o más partidos
+       Naranja más oscuro
+    */
+
+    .marker-cluster-large {
+      background-color: rgba(234, 88, 12, 0.60);
+    }
+
+    .marker-cluster-large div {
+      background-color: #c2410c;
+      color: white;
+      font-weight: bold;
     }
 
 
