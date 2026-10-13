@@ -172,12 +172,12 @@ window.partidos = [
     "hora": "15:00",
     "local": "Torino U20",
     "visitante": "Roma U20",
-    "estadio": "Stadio Valentino Mazzola",
+    "estadio": "Centro Sportivo Robaldo",
     "provincia": "Orbassano",
     "pais": "Italia",
     "partido": "Torino U20 vs Roma U20",
-    "latitud": 45.0047815,
-    "longitud": 7.5517514
+    "latitud": 45.00916,
+    "longitud": 7.64533
   },
   {
     "fecha": "2026-10-17",
